@@ -37,6 +37,7 @@ public class AgendaLxProvider implements EventProvider {
 
     private final RestClient http;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public AgendaLxProvider() {
         this.http = RestClient.builder()
                 .baseUrl("https://www.agendalx.pt/wp-json/agendalx/v1")
