@@ -1,4 +1,4 @@
-package com.example.meetings.service;
+package com.example.meetings.UnitTestsBusinessLogic;
 
 import com.example.meetings.discover.DiscoveredEvent;
 import com.example.meetings.model.InviteStatus;
@@ -8,6 +8,8 @@ import com.example.meetings.model.User;
 import com.example.meetings.repository.MeetingParticipantRepository;
 import com.example.meetings.repository.MeetingRepository;
 import com.example.meetings.repository.UserRepository;
+import com.example.meetings.service.MeetingService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 /*
 * Test MeetingService class
-* Criteria: Line Coverage
+* Criteria: Line and Branch Coverage
 * Goal: 100%
 */
 @ExtendWith(MockitoExtension.class)
@@ -60,7 +62,7 @@ public class MeetingServiceTest {
      * throws an IllegalArgumentException with the message "End time must be after start time"
      */
     @Test
-    void propose_ShouldThrowException_WhenEndTimeIsEqualToStartTime() {
+    void propose_EndTimeIsEqualToStartTime() {
 
         Instant now = Instant.now();
         List<String> invitees = List.of("invitee1");
@@ -78,7 +80,7 @@ public class MeetingServiceTest {
      * throws an IllegalArgumentException with the message "End time must be after start time"
      */
     @Test
-    void propose_ShouldThrowException_WhenEndTimeIsBeforeStartTime() {
+    void propose_EndTimeIsBeforeStartTime() {
 
         Instant start = Instant.now();
         Instant end = start.minusSeconds(60); // 1 minute before start
@@ -98,7 +100,7 @@ public class MeetingServiceTest {
      * throws an IllegalArgumentException with the message "Unknown invitee: unkown" + normalized
      */
     @Test
-    void propose_ShouldThrowException_WhenInviteeDoesNotExist() {
+    void propose_InviteeDoesNotExist() {
         Instant start = Instant.now();
         Instant end = start.plusSeconds(3600);
         List<String> invitees = List.of("invitee1", "unkown");
@@ -118,7 +120,7 @@ public class MeetingServiceTest {
      * Test if null, duplicate and organizer invitees are silently skipped
      */
     @Test
-    void propose_ShouldSaveWithNormalizedInvitees_WhenInputsHaveDuplicatesAndWhitespaces() {
+    void propose_InputsHaveDuplicatesAndWhitespaces() {
 
         Instant start = Instant.now();
         Instant end = start.plusSeconds(3600);
@@ -156,6 +158,25 @@ public class MeetingServiceTest {
         verify(userRepository, times(1)).findByUsername("invitee2");
         
         verify(userRepository, never()).findByUsername("nuno");
+    }
+
+    /**
+     * Test when invitees list is empty
+     */
+    @Test
+    void propose_InviteesListIsEmpty() {
+        Instant start = Instant.now();
+        Instant end = start.plusSeconds(3600);
+        List<String> emptyInvitees = List.of();
+
+        when(meetingRepository.save(any(Meeting.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Meeting result = meetingService.propose(organizer, "Solo Meeting", "Desc", start, end, emptyInvitees);
+
+        assertNotNull(result);
+        assertEquals(1, result.getParticipants().size());
+        verify(meetingRepository).save(any(Meeting.class));
+        verifyNoInteractions(userRepository);
     }
 
 
@@ -199,7 +220,7 @@ public class MeetingServiceTest {
      * IllegalArgumentException, "Response must be ACCEPTED or DECLINED"
      */
     @Test
-    void respond_ShouldThrow_WhenStatusIsNotAcceptedOrDeclined() {
+    void respond_StatusIsNotAcceptedOrDeclined() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> meetingService.respond(1L, organizer, InviteStatus.PENDING));
         assertEquals("Response must be ACCEPTED or DECLINED", ex.getMessage());
@@ -211,7 +232,7 @@ public class MeetingServiceTest {
      * if there's no invite record for the user for that meeting
      */
     @Test
-    void respond_ShouldThrow_WhenNoInviteFound() {
+    void respond_NoInviteFound() {
         when(participantRepository.findByMeetingIdAndUserId(1L, organizer.getId()))
                 .thenReturn(Optional.empty());
  
@@ -224,7 +245,7 @@ public class MeetingServiceTest {
      * Test that the ACCEPT response sets the status correctly
      */
     @Test
-    void respond_ShouldSetStatus_WhenInviteFound() {
+    void respond_InviteFound() {
         MeetingParticipant participant = mock(MeetingParticipant.class);
         when(participantRepository.findByMeetingIdAndUserId(1L, organizer.getId()))
                 .thenReturn(Optional.of(participant));
@@ -238,7 +259,7 @@ public class MeetingServiceTest {
      * Test that the DECLINE response sets the status correctly
      */
     @Test
-    void respond_ShouldSetStatus_WhenDeclined() {
+    void respond_Declined() {
         MeetingParticipant participant = mock(MeetingParticipant.class);
         when(participantRepository.findByMeetingIdAndUserId(2L, invitee1.getId()))
                 .thenReturn(Optional.of(participant));
@@ -258,7 +279,7 @@ public class MeetingServiceTest {
      * for source, title, description, start, end, url and venue
      */
     @Test
-    void copyFromDiscovered_ShouldUseEventEndTime_WhenPresent() {
+    void copyFromDiscovered_EndTimePresent() {
         Instant start = Instant.now();
         Instant end   = start.plusSeconds(7200);
  
@@ -298,7 +319,7 @@ public class MeetingServiceTest {
      * Test indirectly the private "buildDescription()" method with NULL description, NULL venue and NULL url
      */
     @Test
-    void copyFromDiscovered_ShouldDefaultToTwoHours_WhenEndIsNull() {
+    void copyFromDiscovered_EndIsNull() {
         Instant start = Instant.now();
  
         DiscoveredEvent event = new DiscoveredEvent(
@@ -326,13 +347,41 @@ public class MeetingServiceTest {
         verify(meetingRepository).save(any(Meeting.class));
     }
 
+    @Test
+    void copyFromDiscovered_ShouldHandleBlankDescriptionAndVenue() {
+        Instant start = Instant.now();
+        DiscoveredEvent event = new DiscoveredEvent(
+                "ticketmaster",
+                "id-2",
+                "Concert Blank",
+                "   ",   // White spaces description
+                start,
+                null,
+                "https://ticketmaster.com",
+                "  "     // White spaces description venue
+        );
+
+        when(meetingRepository.save(any(Meeting.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Meeting result = meetingService.copyFromDiscovered(organizer, event);
+
+        String desc = result.getDescription();
+        
+        assertFalse(desc.contains("Venue:"));
+        assertTrue(desc.contains("Source: ticketmaster"));
+        assertTrue(desc.contains("(https://ticketmaster.com)"));
+        
+        assertFalse(desc.startsWith("   \n\n")); 
+        verify(meetingRepository).save(any(Meeting.class));
+    }
+
 
 
     /**
      * Test that an ivalid iCal token throws an IllegalArgumentException, "Invalid iCal token"
      */
     @Test
-    void calendarForIcalToken_ShouldThrow_WhenTokenInvalid() {
+    void calendarForIcalToken_TokenInvalid() {
         when(userRepository.findByIcalToken("bad-token")).thenReturn(Optional.empty());
  
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -344,7 +393,7 @@ public class MeetingServiceTest {
      * Tests that a valid iCal token returns the meetings
      */
     @Test
-    void calendarForIcalToken_ShouldReturnMeetingList_WhenTokenValid() {
+    void calendarForIcalToken_TokenValid() {
         Meeting m = mock(Meeting.class);
         List<Meeting> repoResult = List.of(m);
  

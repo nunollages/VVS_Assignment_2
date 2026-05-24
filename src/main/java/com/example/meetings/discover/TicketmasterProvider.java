@@ -33,6 +33,13 @@ public class TicketmasterProvider implements EventProvider {
                 .build();
     }
 
+    // Only visible for classes inside the same package -> Used for integration tests
+    TicketmasterProvider(String apiKey, String countryCode, RestClient http) {
+        this.apiKey = apiKey;
+        this.countryCode = countryCode;
+        this.http = http;
+    }
+
     @Override public String name() { return "Ticketmaster"; }
 
     @Override public boolean isConfigured() { return apiKey != null && !apiKey.isBlank(); }

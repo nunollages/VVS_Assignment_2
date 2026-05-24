@@ -45,6 +45,12 @@ public class AgendaLxProvider implements EventProvider {
                 .build();
     }
 
+    // Only visible for classes inside the same package -> Used for integration tests
+    AgendaLxProvider(RestClient http) {
+        this.http = http;
+    }
+
+
     @Override public String name() { return "Agenda Cultural de Lisboa"; }
 
     @Override public boolean isConfigured() { return true; } // public endpoint, no creds

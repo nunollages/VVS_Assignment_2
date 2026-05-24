@@ -30,6 +30,12 @@ public class SeatGeekProvider implements EventProvider {
         this.http = RestClient.builder().baseUrl("https://api.seatgeek.com/2").build();
     }
 
+    // Only visible for classes inside the same package -> Used for integration tests
+    SeatGeekProvider(String clientId, RestClient http) {
+        this.clientId = clientId;
+        this.http = http;
+    }
+
     @Override public String name() { return "SeatGeek"; }
 
     @Override public boolean isConfigured() { return clientId != null && !clientId.isBlank(); }
