@@ -18,8 +18,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/*
- * Test AppUserDetailsService class
+/**
+ * Unit tests for AppUserDetailsService class
+ * This class validates the business logic for user authentication
+ * 
  * Criteria: Line and Branch Coverage
  * Goal: 100%
  */
@@ -29,6 +31,7 @@ public class AppUserDetailsServiceTest {
     @Mock
     private UserRepository userRepository;
  
+    // Injects the userRepository Mock into the AppUserDetailsService
     @InjectMocks
     private AppUserDetailsService appUserDetailsService;
  
@@ -45,6 +48,7 @@ public class AppUserDetailsServiceTest {
      */
     @Test
     void loadUserByUsername_UserNotExist() {
+        // The mock will return empty everytime someone searches for the user "unkown"
         when(userRepository.findByUsername("unkown")).thenReturn(Optional.empty());
  
         UsernameNotFoundException ex = assertThrows(UsernameNotFoundException.class,
@@ -59,6 +63,7 @@ public class AppUserDetailsServiceTest {
      */
     @Test
     void loadUserByUsername_ExistingUser() {
+         // The mock will return the added user everytime someone searches for the user "nuno"
         when(userRepository.findByUsername("nuno")).thenReturn(Optional.of(user));
  
         UserDetails result = appUserDetailsService.loadUserByUsername("nuno");

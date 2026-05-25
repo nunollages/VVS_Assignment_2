@@ -39,7 +39,8 @@ public class SecurityConfig {
             // The H2 console serves frames; carve a CSRF/frame exception for it.
             .csrf(csrf -> csrf.ignoringRequestMatchers(
                     new AntPathRequestMatcher("/h2-console/**"),
-                    new AntPathRequestMatcher("/ical/**")))
+                    new AntPathRequestMatcher("/ical/**"),
+                    new AntPathRequestMatcher("/logout")))
             .headers(headers -> headers.frameOptions(f -> f.sameOrigin()));
 
         return http.build();

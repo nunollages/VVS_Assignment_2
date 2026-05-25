@@ -17,8 +17,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-/*
- * Test DiscoveryService class
+/**
+ * Unit tests for DiscoveryService class
+ * This class validates the business logic for event discovery and aggregation
+ * 
  * Criteria: Line and Branch Coverage
  * Goal: 100%
  */
@@ -42,7 +44,7 @@ public class DiscoveryServiceTest {
      * Test the providers() method
      */
     @Test
-    void providers_ShouldReturnConfiguredProviders() {
+    void providers_Test() {
         List<EventProvider> result = discoveryService.providers();
         assertEquals(2, result.size());
         assertTrue(result.contains(providerA));
@@ -57,6 +59,7 @@ public class DiscoveryServiceTest {
         List<DiscoveredEvent> result = discoveryService.search(null);
  
         assertTrue(result.isEmpty());
+        // Validate that there where no unnecessary network requests to the EventProviders
         verifyNoInteractions(providerA, providerB);
     }
 
@@ -79,9 +82,10 @@ public class DiscoveryServiceTest {
         when(providerA.isConfigured()).thenReturn(false);
         when(providerB.isConfigured()).thenReturn(false);
  
-        List<DiscoveredEvent> result = discoveryService.search("concert");
+        List<DiscoveredEvent> result = discoveryService.search("Something");
  
         assertTrue(result.isEmpty());
+        // Validate that no search operations are performed when providers are not configured
         verify(providerA, never()).search(anyString());
         verify(providerB, never()).search(anyString());
     }
@@ -108,14 +112,14 @@ public class DiscoveryServiceTest {
     void search_ConfiguredProvider() {
         Instant start = Instant.now();
         DiscoveredEvent event = new DiscoveredEvent(
-                "ticketmaster", "evt-1", "Concert", null,
+                "ticketmaster", "evt-1", "Event", null,
                 start, null, "https://www.ticketline.pt/", null);
  
         when(providerA.isConfigured()).thenReturn(true);
-        when(providerA.search("concert")).thenReturn(List.of(event));
+        when(providerA.search("event")).thenReturn(List.of(event));
         when(providerB.isConfigured()).thenReturn(false);
  
-        List<DiscoveredEvent> result = discoveryService.search("concert");
+        List<DiscoveredEvent> result = discoveryService.search("event");
  
         assertEquals(1, result.size());
         assertSame(event, result.get(0));
@@ -123,7 +127,7 @@ public class DiscoveryServiceTest {
 
     /**
      * Test that when two events with the same URL from different providers
-     * exist, only the first one is returned
+     * exist, only the first one is returned (deduplication)
      */
     @Test
     void search_DuplicatedUrls() {
@@ -172,7 +176,7 @@ public class DiscoveryServiceTest {
     }
 
     /**
-     * 
+     * Test that the returned events are correctly sorted by time
      */
     @Test
     void search_SortResultsByStartTime() {
@@ -185,7 +189,6 @@ public class DiscoveryServiceTest {
                 now.plusSeconds(3600), null, "https://www.ticketline.pt/1", null);
  
         when(providerA.isConfigured()).thenReturn(true);
-        // providerA returns later event first
         when(providerA.search("concert")).thenReturn(List.of(later, earlier));
         when(providerB.isConfigured()).thenReturn(false);
  

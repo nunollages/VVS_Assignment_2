@@ -1,22 +1,26 @@
 package com.example.meetings.UnitTestsBusinessLogic;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Instant;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.example.meetings.model.InviteStatus;
 import com.example.meetings.model.Meeting;
 import com.example.meetings.model.MeetingParticipant;
 import com.example.meetings.model.User;
 import com.example.meetings.service.ICalService;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
- 
-import java.time.Instant;
-import java.util.List;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-/*
- * Test ICalService class
+/**
+ * Unit tests for ICalService class
+ * This class validates the logic for converting internal domain models (Meeting, User) 
+ * into the standard iCalendar (RFC 5545) text format
+ *
  * Criteria: Line and Branch Coverage
  * Goal: 100%
  */
@@ -34,10 +38,11 @@ public class ICalServiceTest {
 
     /**
      * Test that the function rerturns a valid VCALENDAR with only
-     * header and footer and no VEVENT blocks
+     * header and footer and no VEVENT blocks, even if no events exist
      */
     @Test
     void render_MeetingListIsEmpty() {
+        // No meetings were passed
         String result = iCalService.render(organizer, List.of());
  
         assertTrue(result.contains("BEGIN:VCALENDAR"));
@@ -73,25 +78,24 @@ public class ICalServiceTest {
         assertFalse(result.contains("DESCRIPTION:"));
     }
 
+    /**
+     * Test that the description is omited when the meeting description is blank
+     */
     @Test
     void render_DescriptionIsBlank() {
-        User organizer = new User("alice", "alice@email.com", "123");
-        Instant start = Instant.now();
-        Instant end = start.plusSeconds(3600);
+        Meeting meeting = buildMeeting("Meeting 2", "  ", InviteStatus.ACCEPTED);
         
-        Meeting meetingWithBlankDesc = new Meeting("Blank Desc Meeting", "   ", start, end, organizer);
-        
-        String result = iCalService.render(organizer, List.of(meetingWithBlankDesc));
+        String result = iCalService.render(organizer, List.of(meeting));
 
         assertFalse(result.contains("DESCRIPTION:")); 
-        assertTrue(result.contains("SUMMARY:Blank Desc Meeting"));
+        assertTrue(result.contains("SUMMARY:Meeting 2"));
     }
 
     /**
-     * Test that STATUS:CONFIRMED when all participants accept
+     * Test that STATUS:CONFIRMED when all participants accept the invites
      */
     @Test
-    void render_ConfirmedStatus_WhenAllParticipantsAccepted() {
+    void render_ConfirmedStatus() {
         Meeting meeting = buildMeeting("Meeting 3", null, InviteStatus.ACCEPTED);
  
         String result = iCalService.render(organizer, List.of(meeting));
@@ -100,10 +104,10 @@ public class ICalServiceTest {
     }
 
     /**
-     * Test that STATUS:TENTATIVE when at least one participant has not accepted
+     * Test that STATUS:TENTATIVE when at least one participant has not accepted the invite
      */
     @Test
-    void render_ShouldProduceTentativeStatus_WhenParticipantIsPending() {
+    void render_TentativeStatus() {
         Meeting meeting = buildMeeting("Meeting 4", null, InviteStatus.PENDING);
  
         String result = iCalService.render(organizer, List.of(meeting));
@@ -115,7 +119,7 @@ public class ICalServiceTest {
      * Tests that an ACCEPTED participant produces PARTSTAT=ACCEPTED
      */
     @Test
-    void render_AcceptedPartStat_WhenParticipantAccepted() {
+    void render_AcceptedPartStat() {
         Meeting meeting = buildMeeting("Meeting 5", null, InviteStatus.ACCEPTED);
  
         String result = iCalService.render(organizer, List.of(meeting));
@@ -127,7 +131,7 @@ public class ICalServiceTest {
      * Tests that a DECLINED participant produces PARTSTAT=DECLINED
      */
     @Test
-    void render_DeclinedPartStat_WhenParticipantDeclined() {
+    void render_DeclinedPartStat() {
         Meeting meeting = buildMeeting("Meeting 6", null, InviteStatus.DECLINED);
  
         String result = iCalService.render(organizer, List.of(meeting));
@@ -139,7 +143,7 @@ public class ICalServiceTest {
      * Tests that a PENDING participant produces PARTSTAT=NEEDS-ACTION
      */
     @Test
-    void render_NeedsActionPartStat_WhenParticipantIsPending() {
+    void render_NeedsActionPartStat() {
         Meeting meeting = buildMeeting("Meeting 7", null, InviteStatus.PENDING);
  
         String result = iCalService.render(organizer, List.of(meeting));
@@ -147,10 +151,10 @@ public class ICalServiceTest {
         assertTrue(result.contains("PARTSTAT=NEEDS-ACTION"));
     }
     /**
-     * Tests indirectly the escape() method using special characters in the title
+     * Tests indirectly the escape() method using special characters in the title of the meeting
      */
     @Test
-    void render_ShouldEscapeSpecialCharacters_InMeetingTitle() {
+    void render_EscapeSpecialCharacters() {
         // Title contains all special characters that escape() must handle
         Meeting meeting = buildMeeting("Meet\\ing;One,Two\nThree\rFour", null, InviteStatus.ACCEPTED);
  
@@ -160,10 +164,11 @@ public class ICalServiceTest {
     }
 
     /**
-     * Tests that a null organizer username is handled by escape() returning an empty string
+     * Tests that the escape() method handles null values in user fields correctly
+     * (in this case email = null) and does not throw NullPointerExceptions
      */
     @Test
-    void render_ShouldHandleNullValue_InEscape() {
+    void render_NullValue_InEscape() {
         User userWithSpecialChars = new User("nuno", null, "hashed") {
             @Override public String getEmail() { return null; }
         };

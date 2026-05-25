@@ -26,11 +26,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/*
-* Test MeetingService class
-* Criteria: Line and Branch Coverage
-* Goal: 100%
-*/
+/**
+ * Unit tests for MeetingService class
+ * This suite validates the core business logic, including meeting proposal,
+ * invitation handling, and integration with external discovery sources
+ * 
+ * Criteria: Line and Branch Coverage
+ * Goal: 100%
+ */
 @ExtendWith(MockitoExtension.class)
 public class MeetingServiceTest {
 
@@ -62,7 +65,7 @@ public class MeetingServiceTest {
      * throws an IllegalArgumentException with the message "End time must be after start time"
      */
     @Test
-    void propose_EndTimeIsEqualToStartTime() {
+    void propose_EndTimeEqualToStartTime() {
 
         Instant now = Instant.now();
         List<String> invitees = List.of("invitee1");
@@ -76,14 +79,14 @@ public class MeetingServiceTest {
     }
 
     /**
-     * Tests that creating a meeting with an end time before the start time
+     * Tests that creating a meeting with the end time before the start time
      * throws an IllegalArgumentException with the message "End time must be after start time"
      */
     @Test
     void propose_EndTimeIsBeforeStartTime() {
 
         Instant start = Instant.now();
-        Instant end = start.minusSeconds(60); // 1 minute before start
+        Instant end = start.minusSeconds(60);
 
         List<String> invitees = List.of("invitee1");
 
@@ -97,7 +100,7 @@ public class MeetingServiceTest {
 
     /**
      * Tests that creating a meeting with an unexisting invite guest,
-     * throws an IllegalArgumentException with the message "Unknown invitee: unkown" + normalized
+     * throws an IllegalArgumentException with the message "Unknown invitee:" + unkown
      */
     @Test
     void propose_InviteeDoesNotExist() {
@@ -117,7 +120,9 @@ public class MeetingServiceTest {
     }
 
     /**
-     * Test if null, duplicate and organizer invitees are silently skipped
+     * Test if null, duplicate and organizer invitees are silently skipped.
+     * Also test if organizer invite status gets automatically ACCEPTED and
+     * the other invites have PENDING status
      */
     @Test
     void propose_InputsHaveDuplicatesAndWhitespaces() {
@@ -143,8 +148,8 @@ public class MeetingServiceTest {
         assertEquals("Meeting 4", result.getTitle());
         assertEquals(3, result.getParticipants().size());
  
-        // Validate if the invite status of the participant gets automatically accepted
-        // and the other invitess have the status pending
+        // Validate if the invite status of the organizer gets automatically ACCEPTED
+        // and the other invitess have the status PENDING
         result.getParticipants().forEach(p -> {
             if (p.getUser().getUsername().equals("nuno")) {
                 assertEquals(InviteStatus.ACCEPTED, p.getStatus());
@@ -176,32 +181,37 @@ public class MeetingServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getParticipants().size());
         verify(meetingRepository).save(any(Meeting.class));
+
+        // Validates that the userRepository is not consulted
         verifyNoInteractions(userRepository);
     }
 
 
-
     /**
-     * Tests that calls "findCalendarMeetings()" and returns the right result
+     * Tests that calendarFor() calls "findCalendarMeetings()"
+     * and returns the right result (unchanged, unfiltered, etc...)
      */
     @Test
-    void calendarFor_ShouldReturnRepositoryResult() {
+    void calendarFor_ReturnRepositoryResult() {
         List<Meeting> expected = List.of(mock(Meeting.class));
         when(meetingRepository.findCalendarMeetings(organizer)).thenReturn(expected);
  
         List<Meeting> result = meetingService.calendarFor(organizer);
  
         assertSame(expected, result);
+
+        // Verifies that the findCalendarMeetings() method is called
         verify(meetingRepository).findCalendarMeetings(organizer);
     }
 
 
 
     /**
-     * Tests that calls "findByUserAndStatus()" and returns the right result
+     * Tests that pendingInvitesFo() calls "findByUserAndStatus()"
+     * and returns the right result (unchanged, unfiltered, etc...)
      */
     @Test
-    void pendingInvitesFor_ShouldReturnRepositoryResult() {
+    void pendingInvitesFor_ReturnRepositoryResult() {
         List<MeetingParticipant> expected = List.of(mock(MeetingParticipant.class));
         when(participantRepository.findByUserAndStatus(organizer, InviteStatus.PENDING))
                 .thenReturn(expected);
@@ -209,6 +219,8 @@ public class MeetingServiceTest {
         List<MeetingParticipant> result = meetingService.pendingInvitesFor(organizer);
  
         assertSame(expected, result);
+
+        // Verifies that the findByUserAndStatus() method is called
         verify(participantRepository).findByUserAndStatus(organizer, InviteStatus.PENDING);
     }
 
@@ -216,8 +228,8 @@ public class MeetingServiceTest {
 
 
     /**
-     * Test if the status is different from ACCEPTED or DECLINED throws an
-     * IllegalArgumentException, "Response must be ACCEPTED or DECLINED"
+     * Test that attempting to respond to an invite with a status different
+     * from ACCEPTED or DECLINED throws an exception
      */
     @Test
     void respond_StatusIsNotAcceptedOrDeclined() {
@@ -275,7 +287,7 @@ public class MeetingServiceTest {
     /**
      * Test that the event is correctly created and the description 
      * includes description, venue, source and url
-     * Test indirectly the private "buildDescription()" method with existing values
+     * Test undirectly the private "buildDescription()" method with existing values
      * for source, title, description, start, end, url and venue
      */
     @Test
@@ -316,7 +328,7 @@ public class MeetingServiceTest {
 
     /**
      * Tests if an event has no end time time, a default end time is applied
-     * Test indirectly the private "buildDescription()" method with NULL description, NULL venue and NULL url
+     * Test undirectly the private "buildDescription()" method with NULL description, NULL venue and NULL url
      */
     @Test
     void copyFromDiscovered_EndIsNull() {
@@ -340,25 +352,29 @@ public class MeetingServiceTest {
         assertEquals(start.plusSeconds(7200), result.getEndTime());
  
         String desc = result.getDescription();
-        assertFalse(desc.contains("Venue:")); // The venue does not appear
-        assertFalse(desc.contains("(")); // NULL url will not produce "("
+        assertFalse(desc.contains("Venue:"));
+        assertFalse(desc.contains("("));
         assertTrue(desc.contains("Source: ticketmaster"));
  
         verify(meetingRepository).save(any(Meeting.class));
     }
 
+    /**
+     * Tests that blank description and venue fields are correctly filtered out 
+     * from the meeting description
+     */
     @Test
-    void copyFromDiscovered_ShouldHandleBlankDescriptionAndVenue() {
+    void copyFromDiscovered_BlankDescriptionAndVenue() {
         Instant start = Instant.now();
         DiscoveredEvent event = new DiscoveredEvent(
                 "ticketmaster",
                 "id-2",
                 "Concert Blank",
-                "   ",   // White spaces description
+                "   ",
                 start,
                 null,
                 "https://ticketmaster.com",
-                "  "     // White spaces description venue
+                "  "
         );
 
         when(meetingRepository.save(any(Meeting.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -378,7 +394,7 @@ public class MeetingServiceTest {
 
 
     /**
-     * Test that an ivalid iCal token throws an IllegalArgumentException, "Invalid iCal token"
+     * Test that an invalid iCal token throws an IllegalArgumentException, "Invalid iCal token"
      */
     @Test
     void calendarForIcalToken_TokenInvalid() {

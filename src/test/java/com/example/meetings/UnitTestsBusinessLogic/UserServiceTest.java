@@ -20,8 +20,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 
-/*
- * Test UserService class
+/**
+ * Unit tests for UserService class
+ * Validates the user management business logic, ensuring that 
+ * registration and retrieval operations strictly follow application rules
+ * 
+ * 
  * Criteria: Line and Branch Coverage
  * Goal: 100%
  */
@@ -56,7 +60,10 @@ public class UserServiceTest {
                 () -> userService.register("nuno", "nuno@gmail.pt", "123"));
  
         assertEquals("Username already taken", ex.getMessage());
+
+        // Verifies that the save() method was never called with a User object
         verify(userRepository, never()).save(any(User.class));
+        // Verifies that the encode() method was never called with a String
         verify(passwordEncoder, never()).encode(anyString());
     }
 
@@ -98,7 +105,7 @@ public class UserServiceTest {
     }
 
     /**
-     * Tests that return the correct user when it exists
+     * Tests that returns the correct user when it exists
      */
     @Test
     void requireByUsername_ExistingUser() {
