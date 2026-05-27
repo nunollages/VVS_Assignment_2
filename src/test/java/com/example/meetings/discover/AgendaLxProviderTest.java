@@ -49,7 +49,7 @@ public class AgendaLxProviderTest {
      * Test that a API response is correctly mapped to a DiscoveredEvent
      */
     @Test
-    void search_ShouldMapApiResponse_WhenResponseIsValid() {
+    void search_MapApiResponseCorrectly() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{

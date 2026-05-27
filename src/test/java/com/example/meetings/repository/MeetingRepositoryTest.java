@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -19,6 +20,7 @@ import com.example.meetings.model.User;
 /**
  * Database integration tests for MeetingRepository
  */
+@Tag("integration")
 @DataJpaTest
 public class MeetingRepositoryTest {
 

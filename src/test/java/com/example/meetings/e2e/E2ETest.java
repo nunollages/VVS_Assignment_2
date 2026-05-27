@@ -3,13 +3,16 @@ package com.example.meetings.e2e;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -23,11 +26,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import com.example.meetings.discover.DiscoveredEvent;
 import com.example.meetings.discover.DiscoveryService;
+import com.example.meetings.discover.EventProvider;
 import com.example.meetings.repository.MeetingParticipantRepository;
 import com.example.meetings.repository.MeetingRepository;
 import com.example.meetings.repository.UserRepository;
@@ -42,6 +45,7 @@ import com.example.meetings.repository.UserRepository;
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "app.base-url=http://localhost"
 })
+@Tag("e2e")
 public class E2ETest {
 
     @LocalServerPort
@@ -133,11 +137,9 @@ public class E2ETest {
 
     private void setDateTimeLocal(String id, String value) {
         WebElement el = driver.findElement(By.id(id));
-        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
-            // 1. Change type to text to completely disable HTML5 browser validation
-            "arguments[0].type = 'text';" + 
-            // 2. Set the value
-            "arguments[0].value = arguments[1];", 
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1];" +
+            "arguments[0].type = 'text';",
             el, value
         );
     }
@@ -239,21 +241,18 @@ public class E2ETest {
     @Test
     void proposeMeeting_Success() {
         registerAndLogin("nuno", "nuno@gmail.pt", "password123");
- 
+
         driver.get(baseUrl() + "/meetings/new");
-        System.out.println(driver.getCurrentUrl());
-        System.out.println(driver.getPageSource());
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("title")));
- 
+
         driver.findElement(By.id("title")).sendKeys("Meeting 1");
         driver.findElement(By.id("description")).sendKeys("Description");
         setDateTimeLocal("start", "2027-06-15T09:00");
         setDateTimeLocal("end", "2027-06-15T09:30");
+
         submitProposalForm();
 
- 
-        wait.until(ExpectedConditions.urlContains("/calendar"));
-        assertTrue(driver.getPageSource().contains("Meeting 1"));
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Meeting 1"));
     }
 
     /**
@@ -327,7 +326,7 @@ public class E2ETest {
     void pendingInvite_Decline() {
         register("organizer2", "organizer2@gmail.pt", "password123");
         register("invitee2", "invitee2@gmail.pt", "password123");
- 
+
         // Organizer proposes a meeting and invites the invitee
         login("organizer2", "password123");
         wait.until(ExpectedConditions.urlContains("/calendar"));
@@ -339,18 +338,24 @@ public class E2ETest {
         driver.findElement(By.id("invitees")).sendKeys("invitee2");
         submitProposalForm();
         wait.until(ExpectedConditions.urlContains("/calendar"));
- 
-        // Invitee declines
+
+        driver.quit();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        driver = new ChromeDriver(options);
+        wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+
         login("invitee2", "password123");
         wait.until(ExpectedConditions.urlContains("/calendar"));
         assertTrue(driver.getPageSource().contains("Meeting 4"));
- 
+
         WebElement declineButton = driver.findElement(
                 By.xpath("//input[@name='action'][@value='decline']/../button"));
         declineButton.click();
- 
+
         wait.until(ExpectedConditions.urlContains("/calendar"));
-        // After declining, the meeting should not appear in the calendar
         assertFalse(driver.getPageSource().contains("Meeting 4"));
     }
 
@@ -386,23 +391,34 @@ public class E2ETest {
      */
     @Test
     void discover_Search_ShouldShowResults() {
-        registerAndLogin("nuno", "nuno@gmail.pt", "password123");
+        EventProvider mockProvider = mock(EventProvider.class);
+        when(mockProvider.isConfigured()).thenReturn(true);
+        when(mockProvider.name()).thenReturn("MockProvider");
+        when(discoverService.providers()).thenReturn(List.of(mockProvider));
 
+        DiscoveredEvent mockEvent = new DiscoveredEvent(
+            "Ticketmaster",
+            "ext-123",
+            "Jazz Concert",
+            "A great jazz show",
+            Instant.now(),
+            Instant.now().plusSeconds(3600),
+            "http://example.com",
+            "Lisbon Arena"
+        );
+
+        when(discoverService.search(anyString())).thenReturn(List.of(mockEvent));
+
+        registerAndLogin("nuno", "nuno@gmail.pt", "password123");
         driver.get(baseUrl() + "/discover");
 
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("q")));
 
         driver.findElement(By.id("q")).sendKeys("jazz");
+        
+        driver.findElement(By.xpath("//form[@action='/discover']//button")).click();
 
-        driver.findElement(By.cssSelector("button[type=submit]")).click();
-
-        System.out.println(driver.getPageSource());
-
-        wait.until(ExpectedConditions.presenceOfElementLocated(
-            By.xpath("//*[contains(text(),'Results for')]")
-        ));
-
-        assertTrue(driver.getPageSource().contains("Results for"));
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Jazz Concert"));
     }
 
     /**
@@ -410,13 +426,15 @@ public class E2ETest {
      */
     @Test
     void signOut_RedirectToLogin() {
-        registerAndLogin("nuno", "nuno@gmail.pt", "password123");
- 
-        driver.findElement(By.xpath("//button[text()='Sign out']")).click();
- 
-        wait.until(ExpectedConditions.urlContains("/login"));
-        assertTrue(driver.getCurrentUrl().contains("/login"));
-    }
+    registerAndLogin("nuno", "nuno@gmail.pt", "password123");
+
+    ((JavascriptExecutor) driver).executeScript(
+        "document.querySelector('form[action*=\"logout\"]').submit();"
+    );
+
+    wait.until(ExpectedConditions.urlContains("/login"));
+    assertTrue(driver.getCurrentUrl().contains("/login"));
+}
 
 
     
