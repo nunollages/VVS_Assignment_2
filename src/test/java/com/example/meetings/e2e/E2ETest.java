@@ -278,7 +278,7 @@ public class E2ETest {
      * Test if an invited user sees a pending invite on their calendar and can accept it
      */
     @Test
-    void pendingInvite_ShouldAppearAndBeAccepted() {
+    void pendingInvite_AppearAndBeAccepted() {
         register("organizer", "organizer@gmail.pt", "password123");
         register("invitee", "invitee@gmail.pt", "password123");
  
@@ -390,7 +390,7 @@ public class E2ETest {
      * 
      */
     @Test
-    void discover_Search_ShouldShowResults() {
+    void discover_Search() {
         EventProvider mockProvider = mock(EventProvider.class);
         when(mockProvider.isConfigured()).thenReturn(true);
         when(mockProvider.name()).thenReturn("MockProvider");

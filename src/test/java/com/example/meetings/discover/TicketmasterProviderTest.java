@@ -45,6 +45,7 @@ public class TicketmasterProviderTest {
      */
     @Test
     void search_ResponseIsValid() {
+        // When someone performs a GET /events.json the WireMock responds
         wireMock.stubFor(get(urlPathMatching("/events.json"))
                 .willReturn(okJson("""
                         {
@@ -139,6 +140,7 @@ public class TicketmasterProviderTest {
      */
     @Test
     void search_ApiReturnsError() {
+        // Wiremock simulates an error status
         wireMock.stubFor(get(urlPathMatching("/events.json"))
                 .willReturn(serverError()));
  

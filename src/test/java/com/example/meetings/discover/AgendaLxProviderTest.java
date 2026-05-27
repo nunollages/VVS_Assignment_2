@@ -49,7 +49,7 @@ public class AgendaLxProviderTest {
      * Test that a API response is correctly mapped to a DiscoveredEvent
      */
     @Test
-    void search_MapApiResponseCorrectly() {
+    void search_ResponseIsValid() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{
@@ -80,7 +80,7 @@ public class AgendaLxProviderTest {
      * Tests that HTML tags in the description field are stripped from the mapped event
      */
     @Test
-    void search_ShouldStripHtmlTags_FromDescription() {
+    void search_StripHtmlTagsFromDescription() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{
@@ -105,7 +105,7 @@ public class AgendaLxProviderTest {
      * Tests that when string_times cannot be parsed, the fallback time of 20:00 is applied
      */
     @Test
-    void search_ShouldUseFallbackTime_WhenStringTimesIsUnparseable() {
+    void search_FallBackTime() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{
@@ -126,7 +126,7 @@ public class AgendaLxProviderTest {
      * Test that past events are excluded from the results
      */
     @Test
-    void search_ShouldExcludeEvents_WhenAllOccurrencesAreInThePast() {
+    void search_PastEvents() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{
@@ -146,7 +146,7 @@ public class AgendaLxProviderTest {
      * Tests that events with a blank title are excluded from results
      */
     @Test
-    void search_ShouldExcludeEvents_WhenTitleIsBlank() {
+    void search_TitleIsBlank() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{
@@ -166,7 +166,7 @@ public class AgendaLxProviderTest {
      * Tests that the provider returns an empty list when the API responds with an error status
      */
     @Test
-    void search_ShouldReturnEmptyList_WhenApiReturnsError() {
+    void search_ApiReturnsError() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(serverError()));
  

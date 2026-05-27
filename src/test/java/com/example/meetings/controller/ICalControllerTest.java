@@ -22,6 +22,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Optional;
 
+/**
+ * Integration tests for ICalController
+ */
 @Tag("integration")
 @WebMvcTest(ICalController.class)
 @Import(SecurityConfig.class)

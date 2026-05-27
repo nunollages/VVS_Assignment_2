@@ -19,6 +19,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Integration tests for DiscoveryController
+ */
 @Tag("integration")
 @WebMvcTest(DiscoveryController.class)
 @Import(SecurityConfig.class)

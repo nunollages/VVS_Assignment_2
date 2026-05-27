@@ -102,7 +102,7 @@ public class SeatGeekProviderTest {
      * Tests that events with a wrong datetime format are skipped
      */
     @Test
-    void search_ShouldSkipEvents_WhenDatetimeIsUnparseable() {
+    void search_WrongDatetimeFormat() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         {
@@ -123,7 +123,7 @@ public class SeatGeekProviderTest {
      * Tests that a response with an empty events array produces an empty list
      */
     @Test
-    void search_ShouldReturnEmptyList_WhenResponseHasNoEvents() {
+    void search_ResponseHasNoEvents() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("{\"events\": []}")));
  
@@ -136,7 +136,7 @@ public class SeatGeekProviderTest {
      * Tests that the provider returns an empty list when the API responds with an error status
      */
     @Test
-    void search_ShouldReturnEmptyList_WhenApiReturnsError() {
+    void search_ApiReturnsError() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(serverError()));
  
