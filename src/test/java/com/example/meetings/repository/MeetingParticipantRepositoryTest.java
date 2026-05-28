@@ -72,10 +72,10 @@ public class MeetingParticipantRepositoryTest {
     }
 
     /**
-     * Test if findByUserAndStatus() only returns invites for the specified user
+     * Test if findByUserAndStatus() only returns invites for the specified user and status
      */
     @Test
-    void findByUserAndStatus_nvitesForTheSpecifiedUser() {
+    void findByUserAndStatus_InvitesForTheSpecifiedUser() {
         User otherUser = userRepository.save(new User("other", "other@gmail.pt", "hashed"));
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.PENDING));
         participantRepository.save(new MeetingParticipant(meeting, otherUser, InviteStatus.PENDING));
@@ -88,7 +88,7 @@ public class MeetingParticipantRepositoryTest {
     }
 
     /**
-     * Test if findByMeetingIdAndUserId() returns the participant when the meeting and user match
+     * Test if findByMeetingIdAndUserId() returns the participant when the meeting and invited user match
      */
     @Test
     void findByMeetingIdAndUserId_WhenExists() {
@@ -102,7 +102,7 @@ public class MeetingParticipantRepositoryTest {
     }
 
     /**
-     * Test if findByMeetingIdAndUserId() returns empty when no participant matches
+     * Test if findByMeetingIdAndUserId() returns empty when no participant for that meeting matches
      */
     @Test
     void findByMeetingIdAndUserId_NotFound() {

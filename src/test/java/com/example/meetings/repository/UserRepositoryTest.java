@@ -83,7 +83,7 @@ public class UserRepositoryTest {
      * Test if it retuns false when the username does not exist
      */
     @Test
-    void existsByUsername_ShouldReturnFalse_WhenUsernameDoesNotExist() {
+    void existsByUsername_UsernameDoesNotExist() {
         assertFalse(userRepository.existsByUsername("ghost"));
     }
  
