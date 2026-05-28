@@ -1,6 +1,5 @@
 package com.example.meetings.e2e;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -26,10 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
-import com.example.meetings.config.SecurityConfig;
 import com.example.meetings.discover.DiscoveredEvent;
 import com.example.meetings.discover.DiscoveryService;
 import com.example.meetings.discover.EventProvider;
@@ -53,10 +50,17 @@ public class E2ETest {
     @LocalServerPort
     private int port;
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private MeetingRepository meetingRepository;
-    @Autowired private MeetingParticipantRepository participantRepository;
-    @MockBean private DiscoveryService discoverService;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private MeetingRepository meetingRepository;
+
+    @Autowired
+    private MeetingParticipantRepository participantRepository;
+
+    @MockBean
+    private DiscoveryService discoverService;
  
     private WebDriver driver;
     private WebDriverWait wait;
@@ -67,8 +71,7 @@ public class E2ETest {
  
     @BeforeEach
     void setUp() {
-        // Clear database manually — avoids restarting the Spring context
-        // which would change the port and invalidate the browser session
+        // Clear database
         participantRepository.deleteAll();
         meetingRepository.deleteAll();
         userRepository.deleteAll();
@@ -291,7 +294,8 @@ public class E2ETest {
     }
 
     /**
-     * Test if 
+     * Test if an authenticated user can successfully access the discover page 
+     * and see the search interface elements
      */
     @Test
     void discover_Authenticated() {
@@ -306,7 +310,8 @@ public class E2ETest {
     }
 
     /**
-     * 
+     * Test if a user can submit a search query in the discover page and if the 
+     * mocked results from the DiscoveryService are correctly rendered on the screen
      */
     @Test
     void discover_Search() {
