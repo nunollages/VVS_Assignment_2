@@ -1,4 +1,4 @@
-package com.example.meetings.UnitTestsBusinessLogic;
+package com.example.meetings.unitTestsBusinessLogic;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,6 +20,8 @@ import com.example.meetings.service.ICalService;
  * Unit tests for ICalService class
  * This class validates the logic for converting internal domain models (Meeting, User) 
  * into the standard iCalendar (RFC 5545) text format
+ * 
+ * There was no need to use Mockito because the target class has no dependencies
  *
  * Criteria: Line and Branch Coverage
  * Goal: 100%
@@ -33,18 +35,20 @@ public class ICalServiceTest {
     @BeforeEach
     void setUp() {
         iCalService = new ICalService();
+        // Before each test, a user is created
         organizer = new User("nuno", "nuno@gmail.pt", "hash-123");
     }
 
     /**
      * Test that the function rerturns a valid VCALENDAR with only
-     * header and footer and no VEVENT blocks, even if no events exist
+     * header and footer and no VEVENT blocks (valid output), even if no events exist
      */
     @Test
     void render_MeetingListIsEmpty() {
         // No meetings were passed
         String result = iCalService.render(organizer, List.of());
  
+        // Validates that all the fields are included
         assertTrue(result.contains("BEGIN:VCALENDAR"));
         assertTrue(result.contains("VERSION:2.0"));
         assertTrue(result.contains("PRODID:-//meetings-app//EN"));

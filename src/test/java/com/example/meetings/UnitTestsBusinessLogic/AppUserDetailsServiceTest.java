@@ -1,8 +1,12 @@
-package com.example.meetings.UnitTestsBusinessLogic;
+package com.example.meetings.unitTestsBusinessLogic;
 
-import com.example.meetings.model.User;
-import com.example.meetings.repository.UserRepository;
-import com.example.meetings.service.AppUserDetailsService;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,11 +16,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
- 
-import java.util.Optional;
- 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+
+import com.example.meetings.model.User;
+import com.example.meetings.repository.UserRepository;
+import com.example.meetings.service.AppUserDetailsService;
 
 /**
  * Unit tests for AppUserDetailsService class
@@ -39,12 +42,13 @@ public class AppUserDetailsServiceTest {
  
     @BeforeEach
     void setUp() {
+        // Before each test, a user is created
         user = new User("nuno", "nuno@gmail.pt", "hash-123");
     }
 
     /**
      * Tets that the function throws a UsernameNotFoundException, "Unknown user: " + username
-     * when the user does not exist
+     * when is called with a username that does not exist
      */
     @Test
     void loadUserByUsername_UserNotExist() {
@@ -59,7 +63,7 @@ public class AppUserDetailsServiceTest {
 
     /**
      * Tests that the function returns the correct username, passwordHash and ROLE_USER
-     * when the user exists
+     * when it's called with an existing username
      */
     @Test
     void loadUserByUsername_ExistingUser() {

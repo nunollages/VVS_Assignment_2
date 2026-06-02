@@ -1,4 +1,4 @@
-package com.example.meetings.UnitTestsBusinessLogic;
+package com.example.meetings.unitTestsBusinessLogic;
 
 import com.example.meetings.discover.DiscoveredEvent;
 import com.example.meetings.model.InviteStatus;
@@ -55,6 +55,7 @@ public class MeetingServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Before each test, three users are created
         organizer = new User("nuno", "nuno@gmail.pt", "123");
         invitee1 = new User("invitee1", "invitee1@gmail.pt", "123");
         invitee2 = new User("invitee2", "invitee2@gmail.pt", "123");
@@ -75,6 +76,7 @@ public class MeetingServiceTest {
         );
 
         assertEquals("End time must be after start time", exception.getMessage());
+        // Validate that no repository was consulted
         verifyNoInteractions(userRepository, meetingRepository, participantRepository);
     }
 
@@ -95,6 +97,7 @@ public class MeetingServiceTest {
         );
 
         assertEquals("End time must be after start time", exception.getMessage());
+        // Validate that no repository was consulted
         verifyNoInteractions(userRepository, meetingRepository, participantRepository);
     }
 
@@ -146,6 +149,8 @@ public class MeetingServiceTest {
  
         assertNotNull(result);
         assertEquals("Meeting 4", result.getTitle());
+
+        // Validate that null and duplicate invitees are silently skipped
         assertEquals(3, result.getParticipants().size());
  
         // Validate if the invite status of the organizer gets automatically ACCEPTED
@@ -179,6 +184,7 @@ public class MeetingServiceTest {
         Meeting result = meetingService.propose(organizer, "Solo Meeting", "Desc", start, end, emptyInvitees);
 
         assertNotNull(result);
+        // Validate that only the organizer is added as participant
         assertEquals(1, result.getParticipants().size());
         verify(meetingRepository).save(any(Meeting.class));
 
@@ -233,6 +239,7 @@ public class MeetingServiceTest {
      */
     @Test
     void respond_StatusIsNotAcceptedOrDeclined() {
+        // Respond with a PENDING status
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> meetingService.respond(1L, organizer, InviteStatus.PENDING));
         assertEquals("Response must be ACCEPTED or DECLINED", ex.getMessage());
@@ -240,8 +247,8 @@ public class MeetingServiceTest {
     }
 
     /**
-     * Test if an IllegalArgumentException, "No invite found for this use", is thrown
-     * if there's no invite record for the user for that meeting
+     * Test if an IllegalArgumentException with meassge "No invite found for this use",
+     * is thrown if there's no invite record for the user for that meeting
      */
     @Test
     void respond_NoInviteFound() {
@@ -310,13 +317,16 @@ public class MeetingServiceTest {
  
         Meeting result = meetingService.copyFromDiscovered(organizer, event);
  
+        // Validate the meeting basic fields
         assertNotNull(result);
         assertEquals("Drake Concert", result.getTitle());
         assertEquals(end, result.getEndTime());
+        // Validate that the organizer was added as the only participant with ACCEPTED status
         assertEquals(1, result.getParticipants().size());
         assertEquals(InviteStatus.ACCEPTED,
                 result.getParticipants().iterator().next().getStatus());
  
+        // Validate that the description contains all expected fields
         String desc = result.getDescription();
         assertTrue(desc.contains("Drake world tour"));
         assertTrue(desc.contains("Venue: Altice Arena"));
@@ -349,6 +359,7 @@ public class MeetingServiceTest {
  
         Meeting result = meetingService.copyFromDiscovered(organizer, event);
  
+        // Valitade the default applied ending time
         assertEquals(start.plusSeconds(7200), result.getEndTime());
  
         String desc = result.getDescription();
@@ -398,6 +409,7 @@ public class MeetingServiceTest {
      */
     @Test
     void calendarForIcalToken_TokenInvalid() {
+        // Simulate that the token does not match any user
         when(userRepository.findByIcalToken("bad-token")).thenReturn(Optional.empty());
  
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -413,6 +425,7 @@ public class MeetingServiceTest {
         Meeting m = mock(Meeting.class);
         List<Meeting> repoResult = List.of(m);
  
+        // Simulate that the token matches the organizer
         when(userRepository.findByIcalToken("valid-token")).thenReturn(Optional.of(organizer));
         when(meetingRepository.findCalendarMeetings(organizer)).thenReturn(repoResult);
  
@@ -420,6 +433,7 @@ public class MeetingServiceTest {
  
         assertEquals(1, result.size());
         assertTrue(result.contains(m));
+        // Validate that the result is a copy, not the same list reference
         assertNotSame(repoResult, result);
     }
 

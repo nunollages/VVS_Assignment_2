@@ -7,11 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
- 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+
 import java.util.List;
- 
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,18 +25,21 @@ public class SeatGeekProviderTest {
 
     @BeforeEach
     void setUp() {
+        // Start a WireMock server on a dynamic port
         wireMock = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
         wireMock.start();
- 
+
+        // Point the RestClient to the WireMock server
         RestClient client = RestClient.builder()
                 .baseUrl("http://localhost:" + wireMock.port())
                 .build();
- 
+
         provider = new SeatGeekProvider("test-client-id", client);
     }
- 
+
     @AfterEach
     void tearDown() {
+        // Stop the WireMock server after each test
         wireMock.stop();
     }
 
@@ -47,36 +48,38 @@ public class SeatGeekProviderTest {
      */
     @Test
     void search_ResponseIsValid() {
+        // Simulate a valid API response with all fields populated
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         {
                           "events": [{
                             "id": 123,
-                            "title": "Jazz Night",
+                            "title": "Bad Bunny Concert",
                             "short_title": "Jazz",
                             "datetime_utc": "2027-08-20T21:00:00",
                             "url": "https://seatgeek.com/jazz",
-                            "description": "A smooth night",
-                            "venue": { "name": "Hot Clube" }
+                            "description": "Bad Bunny Concert",
+                            "venue": { "name": "Estádio da Luz" }
                           }]
                         }
                         """)));
- 
+
         List<DiscoveredEvent> result = provider.search("jazz");
- 
+
         assertEquals(1, result.size());
         DiscoveredEvent event = result.get(0);
-        assertEquals("Jazz Night", event.title());
+        assertEquals("Bad Bunny Concert", event.title());
         assertEquals("123", event.externalId());
         assertEquals("https://seatgeek.com/jazz", event.url());
-        assertEquals("A smooth night", event.description());
-        assertEquals("Hot Clube", event.venue());
+        assertEquals("Bad Bunny Concert", event.description());
+        assertEquals("Estádio da Luz", event.venue());
         assertEquals("SeatGeek", event.source());
         assertNotNull(event.start());
     }
 
     /**
-     * Tests that when title is null in the API response, short_title is used as fallback
+     * Tests that when title is null in the API response, short_title is used as
+     * fallback
      */
     @Test
     void search_TitleIsNull() {
@@ -90,13 +93,12 @@ public class SeatGeekProviderTest {
                           }]
                         }
                         """)));
- 
+
         List<DiscoveredEvent> result = provider.search("event");
- 
+
         assertEquals(1, result.size());
         assertEquals("Short Title", result.get(0).title());
     }
-
 
     /**
      * Tests that events with a wrong datetime format are skipped
@@ -113,9 +115,9 @@ public class SeatGeekProviderTest {
                           }]
                         }
                         """)));
- 
+
         List<DiscoveredEvent> result = provider.search("event");
- 
+
         assertTrue(result.isEmpty());
     }
 
@@ -126,24 +128,24 @@ public class SeatGeekProviderTest {
     void search_ResponseHasNoEvents() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("{\"events\": []}")));
- 
+
         List<DiscoveredEvent> result = provider.search("concert");
- 
+
         assertTrue(result.isEmpty());
     }
 
     /**
-     * Tests that the provider returns an empty list when the API responds with an error status
+     * Tests that the provider returns an empty list when the API responds with an
+     * error status
      */
     @Test
     void search_ApiReturnsError() {
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(serverError()));
- 
+
         List<DiscoveredEvent> result = provider.search("concert");
- 
+
         assertTrue(result.isEmpty());
     }
 
-    
 }

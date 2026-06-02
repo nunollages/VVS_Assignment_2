@@ -33,6 +33,7 @@ public class MeetingRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        // Before each test, two users are created
         organizer = userRepository.save(new User("nuno", "nuno@gmail.pt", "hashed"));
         invitee   = userRepository.save(new User("invitee1", "invitee1@gmail.pt", "hashed"));
     }
@@ -60,6 +61,7 @@ public class MeetingRepositoryTest {
         Meeting meeting = meetingRepository.save(new Meeting("Meeting 2", null,
                 Instant.parse("2027-06-15T10:00:00Z"),
                 Instant.parse("2027-06-15T11:00:00Z"), organizer));
+        // Add invitee as an ACCEPTED participant of the meeting       
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.ACCEPTED));
  
         List<Meeting> result = meetingRepository.findCalendarMeetings(invitee);
@@ -76,6 +78,7 @@ public class MeetingRepositoryTest {
         Meeting meeting = meetingRepository.save(new Meeting("Meeting 3", null,
                 Instant.parse("2027-06-15T14:00:00Z"),
                 Instant.parse("2027-06-15T15:00:00Z"), organizer));
+        // Simulate a PENDING invitation
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.PENDING));
  
         List<Meeting> result = meetingRepository.findCalendarMeetings(invitee);
@@ -92,6 +95,7 @@ public class MeetingRepositoryTest {
         Meeting meeting = meetingRepository.save(new Meeting("Meeting 4", null,
                 Instant.parse("2027-06-15T16:00:00Z"),
                 Instant.parse("2027-06-15T17:00:00Z"), organizer));
+        // Simulate a DECLINED invitation
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.DECLINED));
  
         List<Meeting> result = meetingRepository.findCalendarMeetings(invitee);
@@ -114,6 +118,7 @@ public class MeetingRepositoryTest {
         List<Meeting> result = meetingRepository.findCalendarMeetings(organizer);
  
         assertEquals(2, result.size());
+        // Validate if the order is correct
         assertEquals("Earlier", result.get(0).getTitle());
         assertEquals("Later", result.get(1).getTitle());
     }

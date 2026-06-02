@@ -1,4 +1,4 @@
-package com.example.meetings.UnitTestsBusinessLogic;
+package com.example.meetings.unitTestsBusinessLogic;
 
 import com.example.meetings.model.User;
 import com.example.meetings.repository.UserRepository;
@@ -25,7 +25,6 @@ import static org.mockito.Mockito.*;
  * Validates the user management business logic, ensuring that 
  * registration and retrieval operations strictly follow application rules
  * 
- * 
  * Criteria: Line and Branch Coverage
  * Goal: 100%
  */
@@ -45,15 +44,17 @@ public class UserServiceTest {
  
     @BeforeEach
     void setUp() {
+        // Before each test, a user is created
         user = new User("nuno", "nuno@gmail.pt", "hash-123");
     }
 
     /**
      * Tests that registering a user with an already taken username
-     * throws an IllegalArgumentException, "Username already taken"
+     * throws an IllegalArgumentException with a message "Username already taken"
      */
     @Test
     void register_AlreadyExistingUsername() {
+        // Simulate that the user already exists
         when(userRepository.existsByUsername("nuno")).thenReturn(true);
  
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -73,12 +74,14 @@ public class UserServiceTest {
      */
     @Test
     void register_Correct() {
+        // Simulate that the user does not exist
         when(userRepository.existsByUsername("nuno")).thenReturn(false);
         when(passwordEncoder.encode("123")).thenReturn("hash-123");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
  
         User result = userService.register("nuno", "nuno@gmail.pt", "123");
  
+        // Validate that the returned user has the correct username, email and encoded password
         assertNotNull(result);
         assertEquals("nuno", result.getUsername());
         assertEquals("nuno@gmail.pt", result.getEmail());
@@ -91,8 +94,8 @@ public class UserServiceTest {
 
 
     /**
-     * Tests that the function throws an IllegalArgumentException, "Unknown user: " + username
-     * when a user does not exist
+     * Tests that the function throws an IllegalArgumentException with a message
+     * "Unknown user: " + username when a user does not exist
      */
     @Test
     void requireByUsername_UserNotExist() {

@@ -54,6 +54,7 @@ public class ICalControllerTest {
         when(iCalService.render(user, java.util.Collections.emptyList()))
                 .thenReturn("BEGIN:VCALENDAR\nEND:VCALENDAR");
 
+        // Validate the content type and the iCal structure
         mockMvc.perform(get("/ical/" + user.getIcalToken() + ".ics"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/calendar"))

@@ -1,4 +1,4 @@
-package com.example.meetings.UnitTestsBusinessLogic;
+package com.example.meetings.unitTestsBusinessLogic;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,15 +37,18 @@ public class DiscoveryServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Inject the mocked providers into the DiscoveryService
         discoveryService = new DiscoveryService(List.of(providerA, providerB));
     }
 
     /**
-     * Test the providers() method
+     * Test that the providers() returns the configured providers correctly
      */
     @Test
     void providers_Test() {
         List<EventProvider> result = discoveryService.providers();
+
+        // There are only two configured providers
         assertEquals(2, result.size());
         assertTrue(result.contains(providerA));
         assertTrue(result.contains(providerB));
@@ -71,6 +74,7 @@ public class DiscoveryServiceTest {
         List<DiscoveredEvent> result = discoveryService.search("   ");
  
         assertTrue(result.isEmpty());
+        // Validate that there where no unnecessary network requests to the EventProviders
         verifyNoInteractions(providerA, providerB);
     }
 
@@ -79,6 +83,7 @@ public class DiscoveryServiceTest {
      */
     @Test
     void search_UnconfiguredProviders() {
+        // Simulate that both providers are not configured
         when(providerA.isConfigured()).thenReturn(false);
         when(providerB.isConfigured()).thenReturn(false);
  
@@ -95,8 +100,10 @@ public class DiscoveryServiceTest {
      */
     @Test
     void search_ProviderReturnsEmptyList() {
+        // Configured provider
         when(providerA.isConfigured()).thenReturn(true);
         when(providerA.search("empty")).thenReturn(List.of());
+        // Not configured provider
         when(providerB.isConfigured()).thenReturn(false);
 
         List<DiscoveredEvent> result = discoveryService.search("empty");
@@ -106,7 +113,7 @@ public class DiscoveryServiceTest {
     }
 
     /**
-     * Test that the method returns the results from a configured provider
+     * Test that the method returns the correct events from a configured provider
      */
     @Test
     void search_ConfiguredProvider() {
@@ -122,6 +129,7 @@ public class DiscoveryServiceTest {
         List<DiscoveredEvent> result = discoveryService.search("event");
  
         assertEquals(1, result.size());
+        // Validate that it is exactly the same object
         assertSame(event, result.get(0));
     }
 
@@ -146,7 +154,9 @@ public class DiscoveryServiceTest {
  
         List<DiscoveredEvent> result = discoveryService.search("concert");
  
+        // The result has only one event
         assertEquals(1, result.size());
+        // Validate that it is exactly the same object
         assertSame(eventA, result.get(0));
     }
 
@@ -171,7 +181,9 @@ public class DiscoveryServiceTest {
  
         List<DiscoveredEvent> result = discoveryService.search("concert");
  
+        // The result has only one event
         assertEquals(1, result.size());
+        // Validate that it is exactly the same object
         assertSame(eventA, result.get(0));
     }
 
@@ -195,6 +207,7 @@ public class DiscoveryServiceTest {
         List<DiscoveredEvent> result = discoveryService.search("concert");
  
         assertEquals(2, result.size());
+        // Validate that it is exactly the same objects
         assertSame(earlier, result.get(0));
         assertSame(later, result.get(1));
     }

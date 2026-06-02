@@ -25,14 +25,17 @@ public class AgendaLxProviderTest {
     private WireMockServer wireMock;
     private AgendaLxProvider provider;
 
+    // Generates a future date to ensure events are not filtered out as past events
     private static final String FUTURE_DATE = LocalDate.now().plusMonths(1)
             .format(DateTimeFormatter.ISO_LOCAL_DATE);
 
     @BeforeEach
     void setUp() {
+        // Start a WireMock server on a dynamic port
         wireMock = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
         wireMock.start();
  
+        // Point the RestClient to the WireMock server
         RestClient client = RestClient.builder()
                 .baseUrl("http://localhost:" + wireMock.port())
                 .build();
@@ -42,20 +45,22 @@ public class AgendaLxProviderTest {
  
     @AfterEach
     void tearDown() {
+        // Stop the WireMock server after each test
         wireMock.stop();
     }
 
-     /**
+    /**
      * Test that a API response is correctly mapped to a DiscoveredEvent
      */
     @Test
     void search_ResponseIsValid() {
+        // Simulate a valid API response with all fields populated
         wireMock.stubFor(get(urlPathMatching("/events"))
                 .willReturn(okJson("""
                         [{
                           "id": 1,
-                          "title": { "rendered": "Fado Night" },
-                          "description": ["<p>Great fado show</p>"],
+                          "title": { "rendered": "Concerto de Fado" },
+                          "description": ["<p>Concerto na casa do fado</p>"],
                           "occurences": ["%s"],
                           "string_times": "sex: 21h30",
                           "link": "https://agendalx.pt/fado",
@@ -65,14 +70,15 @@ public class AgendaLxProviderTest {
  
         List<DiscoveredEvent> result = provider.search("fado");
  
+        // Validate that all fields are correctly mapped to the DiscoveredEvent
         assertEquals(1, result.size());
         DiscoveredEvent event = result.get(0);
-        assertEquals("Fado Night", event.title());
+        assertEquals("Concerto de Fado", event.title());
         assertEquals("1", event.externalId());
         assertEquals("https://agendalx.pt/fado", event.url());
         assertEquals("Casa do Fado", event.venue());
         assertEquals("Agenda Cultural de Lisboa", event.source());
-        assertTrue(event.description().contains("Great fado show"));
+        assertTrue(event.description().contains("Concerto na casa do fado"));
         assertNotNull(event.start());
     }
 
@@ -85,8 +91,8 @@ public class AgendaLxProviderTest {
                 .willReturn(okJson("""
                         [{
                           "id": 2,
-                          "title": { "rendered": "Art Show" },
-                          "description": ["<p>Beautiful <b>art</b> exhibition</p>"],
+                          "title": { "rendered": "Concerto de Fado" },
+                          "description": ["<p>Concerto na <b>casa do fado</b></p>"],
                           "occurences": ["%s"],
                           "string_times": "19h00"
                         }]
@@ -96,9 +102,11 @@ public class AgendaLxProviderTest {
  
         assertEquals(1, result.size());
         String desc = result.get(0).description();
-        assertFalse(desc.contains("<p>"), "HTML tags must be stripped from description");
-        assertTrue(desc.contains("Beautiful"));
-        assertTrue(desc.contains("art"));
+
+        // Validate that HTML tags were reomoved from the description
+        assertFalse(desc.contains("<p>"));
+        assertTrue(desc.contains("Concerto"));
+        assertTrue(desc.contains("casa"));
     }
 
     /**
@@ -119,6 +127,7 @@ public class AgendaLxProviderTest {
         List<DiscoveredEvent> result = provider.search("event");
  
         assertEquals(1, result.size());
+        // Validate that a fallback time was applied
         assertNotNull(result.get(0).start());
     }
 

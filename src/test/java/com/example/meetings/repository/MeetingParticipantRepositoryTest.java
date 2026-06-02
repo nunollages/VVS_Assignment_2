@@ -35,6 +35,7 @@ public class MeetingParticipantRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        // Before each test, two users are created and a meeting is created
         organizer = userRepository.save(new User("nuno", "nuno@gmail.pt", "hashed"));
         invitee   = userRepository.save(new User("invitee1", "invitee1@gmail.pt", "hashed"));
         meeting   = meetingRepository.save(new Meeting("Meeting 1", null,
@@ -48,12 +49,14 @@ public class MeetingParticipantRepositoryTest {
      */
     @Test
     void findByUserAndStatus_PendingInvites() {
+        // Create a PENDING invitation for the invitee
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.PENDING));
  
         List<MeetingParticipant> result = participantRepository
                 .findByUserAndStatus(invitee, InviteStatus.PENDING);
  
         assertEquals(1, result.size());
+        // Validate that the user has a PENDING invite
         assertEquals(InviteStatus.PENDING, result.get(0).getStatus());
         assertEquals("invitee1", result.get(0).getUser().getUsername());
     }
@@ -65,6 +68,7 @@ public class MeetingParticipantRepositoryTest {
     void findByUserAndStatus_NoMatchingStatus() {
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.ACCEPTED));
  
+        // The invite was already ACCEPTED
         List<MeetingParticipant> result = participantRepository
                 .findByUserAndStatus(invitee, InviteStatus.PENDING);
  
@@ -80,6 +84,7 @@ public class MeetingParticipantRepositoryTest {
         participantRepository.save(new MeetingParticipant(meeting, invitee, InviteStatus.PENDING));
         participantRepository.save(new MeetingParticipant(meeting, otherUser, InviteStatus.PENDING));
  
+        // Only check for user invitee
         List<MeetingParticipant> result = participantRepository
                 .findByUserAndStatus(invitee, InviteStatus.PENDING);
  

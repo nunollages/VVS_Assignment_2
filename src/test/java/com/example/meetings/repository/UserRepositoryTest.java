@@ -25,11 +25,12 @@ public class UserRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        // Before each test, a user is created
         nuno = userRepository.save(new User("nuno", "nuno@gmail.pt", "hashed123"));
     }
 
     /**
-     * Test if it returns the correct user when the username exists in the databse
+     * Test if it returns the correct user when a matching username exists in the database
      */
     @Test
     void findByUsername_UsernameExists() {
@@ -41,7 +42,7 @@ public class UserRepositoryTest {
     }
 
     /**
-     * Test if it returns empty when the username does not exist
+     * Test if it returns empty when the username does not exist in the database
      */
     @Test
     void findByUsername_UsernameDoesNotExist() {
@@ -51,10 +52,10 @@ public class UserRepositoryTest {
     }
 
     /**
-     * Test if it returns the correct user when the token exists
+     * Test if it returns the correct user when the token exists in the database
      */
     @Test
-    void findByIcal_TokenTokenExists() {
+    void findByIcal_TokenExists() {
         Optional<User> result = userRepository.findByIcalToken(nuno.getIcalToken());
  
         assertTrue(result.isPresent());
@@ -62,7 +63,7 @@ public class UserRepositoryTest {
     }
 
     /**
-     * Test if it returns empty when the token does not exist
+     * Test if it returns empty when the token does not exist in the databse
      */
     @Test
     void findByIcalToken_TokenDoesNotExist() {

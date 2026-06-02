@@ -58,6 +58,7 @@ public class AuthControllerTest {
     @Test
     void postRegister_UsernameIsTaken() throws Exception {
 
+        // Simulate a registration with an already taken username
         when(userService.register(eq("nuno"), anyString(), anyString()))
             .thenThrow(new IllegalArgumentException("Username already taken"));
 
@@ -66,6 +67,7 @@ public class AuthControllerTest {
                         .param("email", "not-nuno@gmail.pt")
                         .param("password", "secret"))
                 .andExpect(status().isOk())
+                // Validate that the error message is displayed in the form
                 .andExpect(content().string(containsString("Username already taken")));
     }
 
@@ -88,6 +90,7 @@ public class AuthControllerTest {
      */
     @Test
     void getRoot() throws Exception {
+        // Simulate an authenticated user to test the root redirect
         mockMvc.perform(get("/").with(user("nuno").password("password").roles("USER")))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/calendar"));

@@ -38,6 +38,7 @@ public class DiscoveryControllerTest {
     @Test
     @WithMockUser
     void getDiscover_NoQueryParameter() throws Exception {
+        // The page should still render without any errors
         mockMvc.perform(get("/discover"))
                 .andExpect(status().isOk());
     }
@@ -58,6 +59,7 @@ public class DiscoveryControllerTest {
     @Test
     @WithMockUser
     void postDiscover_ValidParams() throws Exception {
+        // Copy a discovered event into the user's calendar
         mockMvc.perform(post("/discover/copy").with(csrf())
                         .param("source", "ticketmaster")
                         .param("externalId", "tm-001")
