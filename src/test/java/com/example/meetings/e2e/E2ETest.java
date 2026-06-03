@@ -35,8 +35,10 @@ import com.example.meetings.repository.MeetingRepository;
 import com.example.meetings.repository.UserRepository;
 
 /**
- * End-to-End tests using Selenium WebDriver and a dedicated test database
- * Chrome runs in headless mode
+ * End-to-End tests using Selenium WebDriver with Chrome in headless mode.
+ * 
+ * A isolated in-memory H2 database is used
+ * 
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
@@ -71,11 +73,12 @@ public class E2ETest {
  
     @BeforeEach
     void setUp() {
-        // Clear database
+        // Clean database
         participantRepository.deleteAll();
         meetingRepository.deleteAll();
         userRepository.deleteAll();
 
+        // Launch Chrome in headless mode
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
         options.addArguments("--no-sandbox");
@@ -86,6 +89,7 @@ public class E2ETest {
  
     @AfterEach
     void tearDown() {
+        // Clear cookies and close the browser
         if (driver != null) {
             try {
                 driver.manage().deleteAllCookies();
@@ -96,6 +100,13 @@ public class E2ETest {
 
     // HELPERS
 
+    /**
+     * Registers a user and waits for the redirect to the login page
+     * 
+     * @param username
+     * @param email 
+     * @param password
+     */
     private void register(String username, String email, String password) {
         driver.get(baseUrl() + "/register");
         driver.findElement(By.id("username")).sendKeys(username);
@@ -106,6 +117,12 @@ public class E2ETest {
 
     }
 
+    /**
+     * Navigates to the login pages and fills the form with the given credentials
+     * 
+     * @param username
+     * @param password
+     */
     private void login(String username, String password) {
         driver.get(baseUrl() + "/login");
 
@@ -114,6 +131,7 @@ public class E2ETest {
         WebElement usernameField = driver.findElement(By.id("username"));
         WebElement passwordField = driver.findElement(By.id("password"));
 
+        // Clear the fields to avoid any previous inputs
         usernameField.clear();
         passwordField.clear();
 
@@ -127,12 +145,20 @@ public class E2ETest {
 
         submit.click();
 
+        // Waits until the URL contains either /calendar (success) or "error" (bad credentials)
         wait.until(ExpectedConditions.or(
             ExpectedConditions.urlContains("/calendar"),
             ExpectedConditions.urlContains("error")
         ));
     }
 
+    /**
+     * Registers a user and immediately logs in
+     * 
+     * @param username
+     * @param email
+     * @param password
+     */
     private void registerAndLogin(String username, String email, String password) {
         register(username, email, password);
         wait.until(ExpectedConditions.urlContains("/login"));
@@ -140,6 +166,11 @@ public class E2ETest {
         wait.until(ExpectedConditions.urlContains("/calendar"));
     }
 
+    /**
+     * This function was created because Selenium's sendKeys cannot reliably type into datetime-local
+     * inputs
+     * It sets the value of a "datetime-local" input via JavaScript
+     */
     private void setDateTimeLocal(String id, String value) {
         WebElement el = driver.findElement(By.id(id));
         ((JavascriptExecutor) driver).executeScript(
@@ -323,12 +354,12 @@ public class E2ETest {
         DiscoveredEvent mockEvent = new DiscoveredEvent(
             "Ticketmaster",
             "ext-123",
-            "Jazz Concert",
-            "A great jazz show",
+            "Bad bunny World Tour",
+            "Bad bunny World Tour",
             Instant.now(),
             Instant.now().plusSeconds(3600),
             "http://example.com",
-            "Lisbon Arena"
+            "Estádio do Benfica"
         );
 
         when(discoverService.search(anyString())).thenReturn(List.of(mockEvent));
@@ -339,16 +370,18 @@ public class E2ETest {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("q")));
 
         WebElement qInput = driver.findElement(By.id("q"));
+
+        // Search for the mocked event
         qInput.clear();
-        qInput.sendKeys("jazz");
+        qInput.sendKeys("bad bunny");
 
         ((JavascriptExecutor) driver).executeScript(
-            "document.getElementById('q').value = 'jazz';" +
+            "document.getElementById('q').value = 'bad bunny';" +
             "document.querySelector('form[action=\"/discover\"]').submit();"
         );
 
-        wait.until(ExpectedConditions.urlContains("q=jazz"));
-        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Jazz Concert"));
+        wait.until(ExpectedConditions.urlContains("q=bad+bunny"));
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), "Bad bunny World Tour"));
     }
 
     /**
@@ -356,17 +389,14 @@ public class E2ETest {
      */
     @Test
     void signOut_RedirectToLogin() {
-    registerAndLogin("nuno", "nuno@gmail.pt", "password123");
+        registerAndLogin("nuno", "nuno@gmail.pt", "password123");
 
-    ((JavascriptExecutor) driver).executeScript(
-        "document.querySelector('form[action*=\"logout\"]').submit();"
-    );
+        ((JavascriptExecutor) driver).executeScript(
+            "document.querySelector('form[action*=\"logout\"]').submit();"
+        );
 
-    wait.until(ExpectedConditions.urlContains("/login"));
-    assertTrue(driver.getCurrentUrl().contains("/login"));
-}
-
-
-    
+        wait.until(ExpectedConditions.urlContains("/login"));
+        assertTrue(driver.getCurrentUrl().contains("/login"));
+    }
     
 }
