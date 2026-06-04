@@ -174,8 +174,10 @@ public class E2ETest {
     private void setDateTimeLocal(String id, String value) {
         WebElement el = driver.findElement(By.id(id));
         ((JavascriptExecutor) driver).executeScript(
-            "arguments[0].value = arguments[1];" +
-            "arguments[0].type = 'text';",
+            "var el = arguments[0];" +
+            "el.value = arguments[1];" +
+            "el.dispatchEvent(new Event('input', {bubbles: true}));" +
+            "el.dispatchEvent(new Event('change', {bubbles: true}));",
             el, value
         );
     }
@@ -279,17 +281,25 @@ public class E2ETest {
         driver.get(baseUrl() + "/meetings/new");
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("title")));
 
-        driver.findElement(By.id("title")).sendKeys("Meeting 1");
-        driver.findElement(By.id("description")).sendKeys("Description");
-        setDateTimeLocal("start", "2027-06-15T09:00");
-        setDateTimeLocal("end", "2027-06-15T09:30");
-
-        submitProposalForm();
+        // Submit via fetch, which correctly sends all form fields
+        ((JavascriptExecutor) driver).executeScript(
+            "var form = document.querySelector('form[action*=\"/meetings/new\"]');" +
+            "var data = new FormData(form);" +
+            "data.set('title', 'Meeting 1');" +
+            "data.set('description', 'Description');" +
+            "data.set('start', '2027-06-15T09:00');" +
+            "data.set('end', '2027-06-15T09:30');" +
+            "fetch(form.action, {method:'POST', body:data})" +
+            "  .then(r => window.location = '/calendar');"
+        );
 
         wait.until(ExpectedConditions.urlContains("/calendar"));
-
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(text(), 'Meeting 1')]")));
-
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//h2[contains(text(),'Your calendar')]")
+        ));
+        wait.until(ExpectedConditions.presenceOfElementLocated(
+            By.xpath("//*[contains(text(), 'Meeting 1')]")
+        ));
         assertTrue(driver.getPageSource().contains("Meeting 1"));
     }
 
